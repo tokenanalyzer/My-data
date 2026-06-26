@@ -1,0 +1,35 @@
+{
+  "name": "my-data-backend",
+  "version": "1.0.0",
+  "description": "Advanced Web Scraping API for My Data App",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "npm run lint && npm run test",
+    "lint": "eslint src/",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.0.0",
+    "redis": "^4.6.0",
+    "bull": "^4.11.0",
+    "puppeteer": "^19.0.0",
+    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.3.0",
+    "socket.io": "^4.5.0",
+    "dotenv": "^16.0.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "joi": "^17.8.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0"
+  }
+}

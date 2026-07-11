@@ -1,30 +1,72 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:frontend/main.dart';
+import 'package:frontend/models/company_model.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('company parsing supplies a safe fallback name', () {
+    final company = Company.fromJson(<String, dynamic>{});
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(company.name, 'Unnamed company');
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  test('company parsing keeps optional metadata', () {
+    final company = Company.fromJson(<String, dynamic>{
+      'name': 'Acme Ltd',
+      'website': 'https://acme.example',
+      'location': 'Mumbai',
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(company.name, 'Acme Ltd');
+    expect(company.website, 'https://acme.example');
+    expect(company.location, 'Mumbai');
+  });
+
+  test('API failures expose an application-safe error', () async {
+    final service = ApiService(
+      client: MockClient((request) async => http.Response('Unavailable', 503)),
+      baseUrl: 'https://api.example/api',
+    );
+
+    await expectLater(
+      service.searchCompanies(source: 'Custom', query: 'agency'),
+      throwsA(isA<ApiException>()),
+    );
+    service.dispose();
+  });
+
+  test('search request maps a valid company response', () async {
+    final service = ApiService(
+      baseUrl: 'https://api.example/api',
+      client: MockClient((request) async {
+        expect(request.url.path, '/api/search');
+        expect(jsonDecode(request.body), <String, dynamic>{
+          'source': 'Custom',
+          'query': 'agency',
+        });
+        return http.Response(
+          jsonEncode([
+            {
+              'name': 'Acme Ltd',
+              'website': 'https://acme.example',
+              'location': 'Mumbai',
+            },
+          ]),
+          200,
+        );
+      }),
+    );
+
+    final companies = await service.searchCompanies(
+      source: 'Custom',
+      query: 'agency',
+    );
+
+    expect(companies, hasLength(1));
+    expect(companies.single.name, 'Acme Ltd');
+    service.dispose();
   });
 }
